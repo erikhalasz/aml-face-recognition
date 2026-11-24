@@ -1,0 +1,16 @@
+# PyTorch with CUDA 12.1: pip install torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cu121
+# facenet-pytorch is installed with --no-deps (see scripts/00_setup.ps1) so it does not downgrade torch
+facenet-pytorch==2.6.0
+jupyter==1.1.1
+matplotlib==3.11.2
+nbformat==5.11.1
+numpy==2.4.6
+opencv-python==5.1.0.95
+pandas==3.1.1
+pillow==13.0.0
+PyYAML==6.0.4
+scikit-image==0.26.0
+scikit-learn==1.9.1
+torch==2.5.1
+torchvision==0.20.1
+tqdm==4.70.1

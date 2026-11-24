@@ -1,0 +1,14 @@
+# data (VGGFace2 / LFW are licensed datasets: download them yourself, see README)
+data/
+*.zip
+*.tgz
+*.u8
+# environment / caches
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+# checkpoints: last.pt (with optimizer state) is local only; best.pt weights are attached to the GitHub release
+*.pt
+# course material
+*.pdf

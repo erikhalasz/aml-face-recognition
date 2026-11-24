@@ -1,0 +1,327 @@
+<title>ArcFace LFW Run Report</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<style>
+/* Layout: single reading column (max 980px) with a lab-notebook feel: stat strip, then sections in pipeline order. */
+:root {
+  --bg: #f6f7f8; --surface: #fcfcfb; --fg: #121416; --muted: #555b61; --faint: #8a9096;
+  --line: #dde1e4; --grid: #e8eaec; --accent: #2a78d6; --accent-soft: #e4eefa;
+  --good: #0f7a3d; --good-soft: #e2f3e8; --bad: #b3261e; --bad-soft: #fbe6e4;
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s7: #6250d6; --neutral: #9a9fa4; --neutral2: #6b7075;
+  --f-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --f-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #141516; --surface: #1a1a19; --fg: #f0efec; --muted: #c3c2b7; --faint: #8f918c;
+  --line: #2e3133; --grid: #26292b; --accent: #5a9cec; --accent-soft: #1c2a3b;
+  --good: #4cc27d; --good-soft: #17301f; --bad: #f07a70; --bad-soft: #3a1c1a;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s7: #9085e9; --neutral: #7c807c; --neutral2: #a7aaa4;
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #141516; --surface: #1a1a19; --fg: #f0efec; --muted: #c3c2b7; --faint: #8f918c;
+  --line: #2e3133; --grid: #26292b; --accent: #5a9cec; --accent-soft: #1c2a3b;
+  --good: #4cc27d; --good-soft: #17301f; --bad: #f07a70; --bad-soft: #3a1c1a;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s7: #9085e9; --neutral: #7c807c; --neutral2: #a7aaa4;
+  color-scheme: dark; }
+
+body { background: var(--bg); color: var(--fg); font-family: var(--f-body); font-size: 15px; line-height: 1.55; }
+.wrap { max-width: 980px; margin: 0 auto; padding-block: 40px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 44px; }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: clamp(28px, 5vw, 40px); line-height: 1.1; font-weight: 700; }
+h2 { font-size: 22px; font-weight: 600; }
+h3 { font-size: 16px; font-weight: 600; }
+p { margin: 0; max-width: 68ch; }
+.eyebrow { font-family: var(--f-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.mono, td.num, .num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+section { display: grid; gap: 16px; min-width: 0; }
+.head { display: grid; gap: 14px; }
+.lede { color: var(--muted); font-size: 16px; }
+.lede strong { color: var(--fg); font-weight: 600; }
+
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.stat { background: var(--surface); padding: 16px 18px; display: grid; gap: 4px; }
+.stat .v { font-family: var(--f-display); font-size: 30px; font-weight: 600; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.stat .l { font-size: 13px; color: var(--muted); }
+.stat .t { font-family: var(--f-mono); font-size: 12px; }
+@media (max-width: 680px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+
+.pill { display: inline-flex; align-items: center; gap: 6px; font-family: var(--f-mono); font-size: 12px; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+.pill.ok { background: var(--good-soft); color: var(--good); }
+.pill.no { background: var(--bad-soft); color: var(--bad); }
+.pill.na { background: var(--grid); color: var(--muted); }
+
+.tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-weight: 500; color: var(--muted); font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+td.num, th.num { text-align: right; white-space: nowrap; }
+tr.final td { background: var(--accent-soft); }
+.sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 8px; vertical-align: 0; }
+.note { font-size: 13px; color: var(--muted); }
+
+.steps { display: grid; gap: 0; border-left: 2px solid var(--line); margin-left: 6px; }
+.step { position: relative; padding: 0 0 18px 22px; display: grid; gap: 4px; }
+.step:last-child { padding-bottom: 0; }
+.step::before { content: ""; position: absolute; left: -7px; top: 6px; width: 12px; height: 12px; border-radius: 50%; background: var(--surface); border: 2px solid var(--accent); }
+.step .when { font-family: var(--f-mono); font-size: 12px; color: var(--muted); }
+.step p { color: var(--muted); font-size: 14px; }
+
+.chart { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); padding: 16px; display: grid; gap: 10px; min-width: 0; position: relative; }
+.chart svg { width: 100%; height: auto; display: block; overflow: visible; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; }
+.tip { position: absolute; pointer-events: none; background: var(--fg); color: var(--bg); font-family: var(--f-mono); font-size: 12px; padding: 6px 8px; border-radius: 6px; white-space: nowrap; transform: translate(-50%, calc(-100% - 10px)); }
+
+.grid2 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+@media (max-width: 760px) { .grid2 { grid-template-columns: 1fr; } }
+.card { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); padding: 16px; display: grid; gap: 8px; align-content: start; }
+.card .delta { font-family: var(--f-display); font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.card p { font-size: 14px; color: var(--muted); }
+
+.issues { display: grid; gap: 0; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.issue { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 16px; padding: 12px 16px; border-bottom: 1px solid var(--line); font-size: 14px; }
+.issue:last-child { border-bottom: 0; }
+.issue b { font-weight: 600; }
+.issue span { color: var(--muted); }
+@media (max-width: 640px) { .issue { grid-template-columns: 1fr; gap: 4px; } }
+ul.plain { margin: 0; padding-left: 18px; display: grid; gap: 6px; max-width: 72ch; }
+ul.plain li { color: var(--muted); }
+ul.plain li b { color: var(--fg); font-weight: 600; }
+code { font-family: var(--f-mono); font-size: 13px; background: var(--grid); padding: 1px 5px; border-radius: 4px; }
+svg text { font-family: var(--f-mono); }
+</style>
+
+<div class="wrap">
+
+<header class="head">
+  <div class="eyebrow">AML project · VGGFace2 → LFW · 23–24 Nov 2026</div>
+  <h1>ResNet-18 + ArcFace face recognition, trained and tested</h1>
+  <p class="lede">We implemented the project deck end to end on a laptop GPU (Quadro T2000, 4 GB). The steps were data preparation, alignment, baselines, three planned training runs, one improved run, and evaluation on LFW. The final model reaches <strong>97.87% LFW verification accuracy</strong>, which beats the 97% target. It meets four of the five committed targets.</p>
+</header>
+
+<div class="stats" role="list">
+  <div class="stat" role="listitem"><span class="l">LFW accuracy (10-fold)</span><span class="v">97.87%</span><span class="t">± 0.40 · target ≥ 97%</span></div>
+  <div class="stat" role="listitem"><span class="l">Equal error rate</span><span class="v">2.37%</span><span class="t">target ≤ 3%</span></div>
+  <div class="stat" role="listitem"><span class="l">Rank-1 identification</span><span class="v">98.5%</span><span class="t">target ≥ 90%</span></div>
+  <div class="stat" role="listitem"><span class="l">GPU training time</span><span class="v">≈ 30 h</span><span class="t">4 runs · 38 epochs</span></div>
+</div>
+
+<section>
+  <h2>Targets from the deck</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>Target</th><th class="num">Committed</th><th class="num">Final model</th><th class="num">Plain 8-epoch run</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td>LFW verification accuracy</td><td class="num">≥ 97%</td><td class="num">97.87%</td><td class="num">94.52%</td><td><span class="pill ok">✓ met</span></td></tr>
+      <tr><td>Equal error rate (EER)</td><td class="num">≤ 3%</td><td class="num">2.37%</td><td class="num">5.65%</td><td><span class="pill ok">✓ met</span></td></tr>
+      <tr><td>Rank-1 on LFW gallery</td><td class="num">≥ 90%</td><td class="num">98.49%</td><td class="num">94.57%</td><td><span class="pill ok">✓ met</span></td></tr>
+      <tr><td>FRR at threshold</td><td class="num">≤ 10%</td><td class="num">3.07%</td><td class="num">6.28%</td><td><span class="pill ok">✓ met</span></td></tr>
+      <tr><td>FAR at threshold</td><td class="num">≤ 1%</td><td class="num">15.46%</td><td class="num">63.01%</td><td><span class="pill no">✗ missed</span></td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">The identification threshold is chosen on VGGFace2 dev identities, as the deck requires, and gives 0.96% FAR there. It is never tuned on LFW. On LFW the same threshold lets in more unknown people, because LFW impostor pairs score higher. Fitting it on LFW would hit 1%, but that would be test-set leakage.</p>
+</section>
+
+<section>
+  <h2>What was done, in order</h2>
+  <div class="steps">
+    <div class="step"><span class="when">Setup</span><h3>Environment and data</h3><p>Created a Python venv with PyTorch 2.5.1 (CUDA 12.1), MTCNN, OpenCV and scikit-learn. Unzipped the VGGFace2 subset (483,919 images, 7,382 identities). Downloaded LFW and the official pairs file.</p></div>
+    <div class="step"><span class="when">Split + leakage control</span><h3>Identity-disjoint split</h3><p>Held out 500 random identities as dev, because the archive has none of the official test identities. Removed 506 identities whose names match LFW people (46,569 images). That leaves 394,027 training images from 6,409 identities and 27,563 dev images from 467 identities.</p></div>
+    <div class="step"><span class="when">Preprocessing (≈ 2 h)</span><h3>Detection → 5 landmarks → 112×112 alignment</h3><p>Ran MTCNN on every image and applied a similarity warp to the ArcFace template. Quality filters dropped 8,781 blurry, 3,391 low-confidence, 3,260 no-face and 328 badly exposed images. A fixed face mask taken from training images matches LFW to the masked VGGFace2 crops. A crop-only copy was made for Ablation 2.</p></div>
+    <div class="step"><span class="when">Baselines</span><h3>Classical and reference models</h3><p>Eigenfaces (PCA, 200 components) and LBP histograms set the lower bound. A pretrained FaceNet was run through the same LFW code to check that the evaluation is correct (97.67%).</p></div>
+    <div class="step"><span class="when">23 Nov, ≈ 13:30 → 19:50</span><h3>Run 1: ResNet-18 + ArcFace, 8 epochs</h3><p>The main model from the plan. Reached 94.52% on LFW, below target.</p></div>
+    <div class="step"><span class="when">23 Nov 20:00 → 24 Nov ≈ 04:00</span><h3>Run 2: ResNet-18 + softmax, 8 epochs</h3><p>Baseline and Ablation 1. Claude Code stopped it because of low system memory, and it was resumed from its checkpoint in a separate window.</p></div>
+    <div class="step"><span class="when">24 Nov ≈ 04:00 → 09:40</span><h3>Run 3: ArcFace on crop-only faces, 8 epochs</h3><p>Ablation 2: the same model without landmark alignment.</p></div>
+    <div class="step"><span class="when">Diagnosis</span><h3>Why LFW was lower than expected</h3><p>LFW faces are about 100 px, blurry and JPEG-compressed, while the training crops are sharp. There was also a small scale and position offset in the aligned frame. Dev accuracy could not show either problem.</p></div>
+    <div class="step"><span class="when">24 Nov 09:38 → 20:39</span><h3>Run 4: ArcFace + degradation augmentation, 14 epochs</h3><p>Training images were randomly downscaled (30–90%), blurred, JPEG-compressed and colour-jittered, and given small scale, shift and rotation changes. The run used 14 epochs instead of 8. It reached 97.87% on LFW and became the final model.</p></div>
+    <div class="step"><span class="when">Report</span><h3>Notebook, README and leakage scan</h3><p><code>notebooks/report.ipynb</code> holds all the tables and figures, including ROC and DET curves, ablations, threshold transfer and failure cases. The README has the commands and the results.</p></div>
+    <div class="step"><span class="when">24 Nov ≈ 21:15</span><h3>Embedding leakage scan</h3><p>The final model compared every LFW person with every training identity. 21 LFW people turned out to be in the training set under a different spelling of their name, which the name filter missed (for example Sean Combs / Diddy, Dwayne Wade / Dwyane Wade). They appear in only 53 of the 6,000 test pairs. Without those pairs the final model scores 97.85% instead of 97.87%, so the results are not inflated.</p></div>
+  </div>
+</section>
+
+<section>
+  <h2>Training: dev-set verification accuracy per epoch</h2>
+  <p class="note">6,000 sampled pairs from the 467 held-out VGGFace2 identities, measured after each epoch. All runs: batch 32, SGD with lr 0.035 and cosine decay, fp32, about 47 min per epoch at 144 images/s.</p>
+  <div class="chart" id="devchart">
+    <div class="legend" id="devlegend"></div>
+    <svg id="devsvg" viewBox="0 0 900 340" role="img" aria-label="Dev accuracy per epoch for four training runs"></svg>
+  </div>
+  <p class="note">On dev, the final run ends at 95.45%, almost the same as the plain run (95.20%). On LFW the two are 3.4 points apart. Augmentation helps with the gap in image quality between VGGFace2 and LFW, and the dev set has no such gap, so its accuracy can't show the gain.</p>
+</section>
+
+<section>
+  <h2>LFW results, all models</h2>
+  <div class="chart">
+    <svg id="lfwsvg" viewBox="0 0 900 300" role="img" aria-label="LFW accuracy per model with 97% target line"></svg>
+  </div>
+  <div class="tbl"><table>
+    <thead><tr><th>Model</th><th class="num">LFW acc</th><th class="num">EER</th><th class="num">AUC</th><th class="num">TAR@FAR 0.1%</th><th class="num">Rank-1</th><th class="num">FAR / FRR @ τ</th></tr></thead>
+    <tbody id="lfwbody"></tbody>
+  </table></div>
+  <p class="note">LFW protocol: the 6,000 official pairs in 10 folds, with the threshold fitted on 9 folds and tested on the 10th. Identification uses a gallery of 423 people (3 enrolled images each), 4,716 probes of enrolled people and 4,069 probes of unknown people. TAR at 0.1% FAR is based on just 3 impostor pairs, so it is noisy. FaceNet was trained on the full VGGFace2 (3.3M images) and is here only to check the evaluation.</p>
+</section>
+
+<section>
+  <h2>Ablations</h2>
+  <div class="grid2">
+    <div class="card"><span class="eyebrow">Ablation 1 · loss</span><h3>ArcFace vs softmax</h3><div class="delta">−0.26 pp</div><p>94.52% vs 94.78% on LFW, which is within one fold standard deviation. At 8 epochs the ArcFace margin hasn't paid off yet: the ArcFace loss starts much higher (about 43 vs 9 for softmax), and the literature shows its advantage after 20 or more epochs.</p></div>
+    <div class="card"><span class="eyebrow">Ablation 2 · preprocessing</span><h3>5-point alignment vs crop only</h3><div class="delta">+1.57 pp</div><p>92.95% → 94.52% on LFW. Rank-1 rises by 4.8 pp (89.7% → 94.6%) and FRR halves. On dev the two were level, because the VGGFace2 crops were already roughly aligned. On LFW's natural photos, alignment matters.</p></div>
+    <div class="card"><span class="eyebrow">Extra · training recipe</span><h3>Degradation aug + 14 epochs</h3><div class="delta">+3.35 pp</div><p>94.52% → 97.87% on LFW. EER fell from 5.65% to 2.37% and TAR at 0.1% FAR rose from 61% to 91%. The spread across folds also fell, from ±1.33 to ±0.40. This was the biggest single improvement.</p></div>
+  </div>
+</section>
+
+<section>
+  <h2>Engineering problems solved along the way</h2>
+  <div class="issues">
+    <div class="issue"><b>Mixed precision was 11× slower</b><span>The T2000 (TU117) has no tensor cores, so fp16 runs at 0.42 TFLOPS against 1.97 in fp32. All training runs in fp32.</span></div>
+    <div class="issue"><b>NaN loss on the first step</b><span>Caused by <code>cudnn.benchmark</code>. Turned it off.</span></div>
+    <div class="issue"><b>Training at 17 img/s</b><span><code>permute()</code> produced channels-last tensors, which are about 10× slower on this GPU. Adding <code>.contiguous()</code> brought it to 144 img/s.</span></div>
+    <div class="issue"><b>Slowdown at batch 48</b><span>Windows spills VRAM above about 3 GB into shared memory. Used batch 32 with lr 0.035.</span></div>
+    <div class="issue"><b>Domain gap from masked training crops</b><span>The VGGFace2 subset comes pre-aligned with a white mask. A fixed mask estimated from training images is applied to train, dev and LFW. The alignment template is zoomed 1.2×.</span></div>
+    <div class="issue"><b>Non-ASCII paths and Windows workers</b><span>Images are read with <code>np.fromfile</code> + <code>imdecode</code>. Memmaps are opened lazily so DataLoader spawn workers don't pickle them.</span></div>
+    <div class="issue"><b>Jobs stopped under memory pressure</b><span>Happened twice (preprocessing and the softmax run). Every stage is resumable, and the final runs were moved to their own PowerShell window.</span></div>
+    <div class="issue"><b>Name filter missed alias spellings</b><span>The embedding scan found 21 LFW people under different names in VGGFace2. Re-scoring LFW without those 53 pairs changes accuracy by at most 0.04 pp for every model.</span></div>
+    <div class="issue"><b>Leakage scan crash</b><span>A pandas 2.2 <code>groupby.apply</code> change dropped the key column. Replaced it with <code>groupby.head</code>.</span></div>
+  </div>
+</section>
+
+<section>
+  <h2>Not done, and what to try next</h2>
+  <ul class="plain">
+    <li><b>FAR ≤ 1% at a dev-chosen threshold.</b> LFW impostor scores sit higher than VGGFace2 dev scores. The fix would be a validation gallery that looks more like LFW, such as degraded dev images, not tuning on LFW.</li>
+    <li><b>Remove the 21 alias identities from training</b> in any future run. Their effect on the current results is negligible, but a clean split is better practice.</li>
+    <li><b>ResNet-50 and the CFP-FP / AgeDB stretch goals.</b> These were not attempted. R50 would take about 3× longer per epoch on this GPU, roughly 30+ h for a comparable run.</li>
+    <li><b>A fair ArcFace vs softmax comparison</b> would need both losses trained with the final recipe (augmentation, 14+ epochs). At 8 epochs the comparison is inconclusive.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Deliverables in the project folder</h2>
+  <div class="tbl"><table>
+    <tbody>
+      <tr><td><code>facerec/</code></td><td>Package: alignment, preprocessing, IR-ResNet, ArcFace and softmax heads, training loop, degradation augmentation, verification and identification metrics, classical baselines, benchmarks</td></tr>
+      <tr><td><code>scripts/</code></td><td>Numbered pipeline stages 00–04, <code>train.py</code>, <code>evaluate.py</code>, <code>make_report.py</code>, <code>run_all.ps1</code>, <code>run_aug.ps1</code></td></tr>
+      <tr><td><code>configs/</code></td><td>r18_arcface, r18_softmax, r18_arcface_croponly, r18_arcface_aug (final), r50_arcface (not run)</td></tr>
+      <tr><td><code>outputs/&lt;run&gt;/</code></td><td><code>best.pt</code>, <code>last.pt</code>, <code>log.csv</code>, <code>results.json</code> for every run and baseline</td></tr>
+      <tr><td><code>notebooks/report.ipynb</code></td><td>Executed report with tables, ROC and DET curves, ablations, threshold transfer and failure cases</td></tr>
+      <tr><td><code>README.md</code></td><td>Commands to reproduce, results table, deviations from the plan</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+</div>
+
+<script>
+const RUNS = [
+  { key: "aug", label: "ArcFace + degradation aug, 14 ep (final)", color: "--s7",
+    dev: [0.7937,0.8973,0.9187,0.9207,0.9263,0.9315,0.9390,0.9412,0.9480,0.9482,0.9502,0.9523,0.9543,0.9545] },
+  { key: "arc", label: "ArcFace, 8 ep", color: "--s1", dev: [0.8477,0.9135,0.9273,0.9323,0.9417,0.9443,0.9518,0.9520] },
+  { key: "soft", label: "Softmax, 8 ep", color: "--s2", dev: [0.8878,0.9135,0.9182,0.9318,0.9382,0.9455,0.9515,0.9523] },
+  { key: "crop", label: "ArcFace crop-only, 8 ep", color: "--s3", dev: [0.7557,0.8755,0.9157,0.9272,0.9377,0.9435,0.9485,0.9478] },
+];
+const LFW = [
+  { m: "ResNet-18 + ArcFace + aug, 14 ep (final)", c: "--s7", acc: 97.87, sd: 0.40, eer: 2.37, auc: 0.9968, tar: 90.5, r1: 98.49, far: 15.46, frr: 3.07, final: true },
+  { m: "Pretrained FaceNet (reference)", c: "--neutral2", acc: 97.67, sd: 0.75, eer: 2.33, auc: 0.9976, tar: 88.2, r1: 96.90, far: 5.87, frr: 11.56 },
+  { m: "ResNet-18 + softmax, 8 ep", c: "--s2", acc: 94.78, sd: 1.06, eer: 5.10, auc: 0.9894, tar: 76.2, r1: 94.89, far: 41.61, frr: 6.89 },
+  { m: "ResNet-18 + ArcFace, 8 ep", c: "--s1", acc: 94.52, sd: 1.33, eer: 5.65, auc: 0.9870, tar: 61.2, r1: 94.57, far: 63.01, frr: 6.28 },
+  { m: "ResNet-18 + ArcFace crop-only, 8 ep", c: "--s3", acc: 92.95, sd: 1.71, eer: 7.13, auc: 0.9806, tar: 62.9, r1: 89.74, far: 43.60, frr: 13.02 },
+  { m: "Eigenfaces (PCA)", c: "--neutral", acc: 70.37, sd: 2.17, eer: 29.93, auc: 0.7702, tar: 6.9, r1: 25.74, far: 39.15, frr: 79.43 },
+  { m: "LBP histograms", c: "--neutral", acc: 67.53, sd: 2.36, eer: 32.58, auc: 0.7419, tar: 11.4, r1: null },
+];
+const NS = "http://www.w3.org/2000/svg";
+const col = v => `var(${v})`;
+function el(tag, attrs, parent, text) {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (text != null) e.textContent = text;
+  if (parent) parent.appendChild(e);
+  return e;
+}
+
+// ---- dev accuracy line chart
+(function () {
+  const svg = document.getElementById("devsvg"), box = document.getElementById("devchart");
+  const W = 900, H = 340, L = 52, R = 24, T = 14, B = 40;
+  const x = e => L + (e - 1) / 13 * (W - L - R);
+  const yMin = 75, yMax = 96, y = v => T + (yMax - v) / (yMax - yMin) * (H - T - B);
+  for (let v = 75; v <= 95; v += 5) {
+    el("line", { x1: L, x2: W - R, y1: y(v), y2: y(v), stroke: col("--grid"), "stroke-width": 1 }, svg);
+    el("text", { x: L - 10, y: y(v) + 4, "text-anchor": "end", "font-size": 12, fill: col("--muted") }, svg, v + "%");
+  }
+  for (let e = 1; e <= 14; e++) el("text", { x: x(e), y: H - B + 20, "text-anchor": "middle", "font-size": 12, fill: col("--muted") }, svg, e);
+  el("text", { x: (L + W - R) / 2, y: H - 4, "text-anchor": "middle", "font-size": 12, fill: col("--muted") }, svg, "epoch");
+  const lg = document.getElementById("devlegend");
+  const pts = [];
+  RUNS.forEach(r => {
+    const d = r.dev.map((v, i) => `${i ? "L" : "M"}${x(i + 1).toFixed(1)},${y(v * 100).toFixed(1)}`).join("");
+    el("path", { d, fill: "none", stroke: col(r.color), "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round" }, svg);
+    r.dev.forEach((v, i) => pts.push({ r, e: i + 1, v: v * 100, cx: x(i + 1), cy: y(v * 100) }));
+    const s = document.createElement("span");
+    s.innerHTML = `<i class="sw" style="background:${col(r.color)}"></i>${r.label}`;
+    lg.appendChild(s);
+  });
+  // endpoint markers + direct label for the final run
+  RUNS.forEach(r => { const n = r.dev.length; el("circle", { cx: x(n), cy: y(r.dev[n - 1] * 100), r: 4, fill: col(r.color), stroke: col("--surface"), "stroke-width": 2 }, svg); });
+  el("text", { x: x(14) - 6, y: y(95.45) - 10, "text-anchor": "end", "font-size": 12, fill: col("--fg") }, svg, "95.45% (final)");
+  // hover: nearest point
+  const guide = el("line", { y1: T, y2: H - B, stroke: col("--faint"), "stroke-width": 1, "stroke-dasharray": "3 3", visibility: "hidden" }, svg);
+  const dot = el("circle", { r: 5, fill: "none", stroke: col("--fg"), "stroke-width": 2, visibility: "hidden" }, svg);
+  const tip = document.createElement("div"); tip.className = "tip"; tip.hidden = true; box.appendChild(tip);
+  svg.addEventListener("pointermove", ev => {
+    const p = svg.createSVGPoint(); p.x = ev.clientX; p.y = ev.clientY;
+    const q = p.matrixTransform(svg.getScreenCTM().inverse());
+    let best = null, bd = 1e9;
+    pts.forEach(o => { const d = Math.hypot(o.cx - q.x, (o.cy - q.y) * 0.6); if (d < bd) { bd = d; best = o; } });
+    if (!best || bd > 60) { tip.hidden = true; guide.setAttribute("visibility", "hidden"); dot.setAttribute("visibility", "hidden"); return; }
+    guide.setAttribute("x1", best.cx); guide.setAttribute("x2", best.cx); guide.setAttribute("visibility", "visible");
+    dot.setAttribute("cx", best.cx); dot.setAttribute("cy", best.cy); dot.setAttribute("visibility", "visible");
+    const sr = svg.getBoundingClientRect(), br = box.getBoundingClientRect();
+    tip.style.left = (sr.left - br.left + best.cx / W * sr.width) + "px";
+    tip.style.top = (sr.top - br.top + best.cy / H * sr.height) + "px";
+    tip.textContent = `${best.r.label} · epoch ${best.e} · ${best.v.toFixed(2)}%`;
+    tip.hidden = false;
+  });
+  svg.addEventListener("pointerleave", () => { tip.hidden = true; guide.setAttribute("visibility", "hidden"); dot.setAttribute("visibility", "hidden"); });
+})();
+
+// ---- LFW accuracy bars (x from 50% to 100%) with target line
+(function () {
+  const svg = document.getElementById("lfwsvg");
+  const W = 900, L = 300, R = 70, T = 24, rowH = 36, H = T + LFW.length * rowH + 30;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  const x = v => L + (v - 50) / 50 * (W - L - R);
+  for (let v = 50; v <= 100; v += 10) {
+    el("line", { x1: x(v), x2: x(v), y1: T - 6, y2: H - 26, stroke: col("--grid"), "stroke-width": 1 }, svg);
+    el("text", { x: x(v), y: H - 8, "text-anchor": "middle", "font-size": 12, fill: col("--muted") }, svg, v + "%");
+  }
+  LFW.forEach((d, i) => {
+    const yy = T + i * rowH;
+    el("text", { x: L - 12, y: yy + 19, "text-anchor": "end", "font-size": 13, fill: col("--fg"), "font-weight": d.final ? 600 : 400 }, svg, d.m);
+    const w = x(d.acc) - L;
+    el("path", { d: `M${L},${yy + 6}h${w - 4}a4,4 0 0 1 4,4v12a4,4 0 0 1 -4,4h${-(w - 4)}z`, fill: col(d.c) }, svg);
+    el("text", { x: x(d.acc) + 8, y: yy + 20, "font-size": 12, fill: col("--fg") }, svg, d.acc.toFixed(2));
+    const t = el("title", {}, null, `${d.m}: ${d.acc.toFixed(2)} ± ${d.sd.toFixed(2)}%`); svg.lastChild.previousSibling.appendChild(t);
+  });
+  el("line", { x1: x(97), x2: x(97), y1: T - 10, y2: H - 26, stroke: col("--fg"), "stroke-width": 1.5, "stroke-dasharray": "4 3" }, svg);
+  el("text", { x: x(97), y: T - 14, "text-anchor": "middle", "font-size": 12, fill: col("--fg") }, svg, "target 97%");
+})();
+
+// ---- LFW table
+(function () {
+  const tb = document.getElementById("lfwbody");
+  const f = (v, d = 2, s = "%") => v == null ? "–" : v.toFixed(d) + s;
+  LFW.forEach(d => {
+    const tr = document.createElement("tr"); if (d.final) tr.className = "final";
+    tr.innerHTML = `<td><i class="sw" style="background:${col(d.c)}"></i>${d.m}</td>
+      <td class="num">${d.acc.toFixed(2)} ± ${d.sd.toFixed(2)}</td><td class="num">${f(d.eer)}</td><td class="num">${d.auc.toFixed(3)}</td>
+      <td class="num">${f(d.tar, 1)}</td><td class="num">${f(d.r1)}</td>
+      <td class="num">${d.far == null ? "–" : d.far.toFixed(1) + " / " + d.frr.toFixed(1) + "%"}</td>`;
+    tb.appendChild(tr);
+  });
+})();
+</script>

@@ -1,0 +1,7 @@
+name: r18_softmax
+backbone: r18
+head: softmax
+variant: aligned
+epochs: 8
+batch_size: 32
+lr: 0.035

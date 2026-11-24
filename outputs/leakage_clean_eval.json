@@ -1,0 +1,53 @@
+{
+ "flagged": [
+  "Ali_Naimi",
+  "Billy_Gilman",
+  "Camilla_Parker_Bowles",
+  "Charles_Schumer",
+  "Dwayne_Wade",
+  "George_Papandreou",
+  "Gillian_Anderson",
+  "Hillary_Clinton",
+  "Jamie_Dimon",
+  "John_Reilly",
+  "Juan_Carlos",
+  "Kate_Winslet",
+  "Mona_Ayoub",
+  "Monica_Bellucci",
+  "Nicholas_Tse",
+  "Queen_Beatrix",
+  "Queen_Silvia",
+  "Rahul_Dravid",
+  "Rebecca_Romijn-Stamos",
+  "Sean_Combs",
+  "Vince_Vaughan"
+ ],
+ "n_pairs": 53,
+ "runs": {
+  "r18_arcface_aug": {
+   "acc": 0.9784781640465479,
+   "sd": 0.004039609746263937,
+   "eer": 0.023877586012285866
+  },
+  "r18_arcface": {
+   "acc": 0.94484386898521,
+   "sd": 0.013475724632094172,
+   "eer": 0.05683538078980724
+  },
+  "r18_softmax": {
+   "acc": 0.9478487964364304,
+   "sd": 0.010945074280497733,
+   "eer": 0.05095008856892032
+  },
+  "r18_arcface_croponly": {
+   "acc": 0.9297166413538663,
+   "sd": 0.01730694509827137,
+   "eer": 0.0709600368797772
+  },
+  "ref_facenet_vggface2": {
+   "acc": 0.9766078976749117,
+   "sd": 0.007490165412758581,
+   "eer": 0.02337315824487188
+  }
+ }
+}

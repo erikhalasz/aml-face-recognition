@@ -1,0 +1,10 @@
+# Main model, improved recipe: degradation augmentation (blur / downscale / JPEG / colour / small
+# scale-shift-rotation) to match LFW image quality, and a longer schedule (14 epochs instead of 8).
+name: r18_arcface_aug
+backbone: r18
+head: arcface
+variant: aligned
+epochs: 14
+batch_size: 32
+lr: 0.035
+degrade_aug: true

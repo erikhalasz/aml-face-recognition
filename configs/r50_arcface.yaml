@@ -1,0 +1,7 @@
+name: r50_arcface
+backbone: r50
+head: arcface
+variant: aligned
+epochs: 8
+batch_size: 24
+lr: 0.025
